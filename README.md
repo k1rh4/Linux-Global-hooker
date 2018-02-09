@@ -11,8 +11,7 @@ So, I made file notification for know who access files.
 
 
 ## What?
-
-# k1rh4 @ k1rh4 in /k1rh4/DIY_DEVEL/FILEHOOK on git:master x [8:44:01] C:130
+```shell
 $ sudo ./run.sh 
 [sudo] password for k1rh4: 
 [!] removing /tmp/file_log.txt.
@@ -26,9 +25,8 @@ $ sudo ./run.sh
 [+] Caller->ppName:[sh]:[4131],pName:[tail]:[4142]->/tmp/file_log.txt
 [+] Caller->ppName:[-zsh]:[4175],pName:[touch]:[4208]->/tmp/testFile
 
-# k1rh4 @ k1rh4 in /k1rh4/DIY_DEVEL/FILEHOOK on git:master x [8:44:01] C:130
 $ sudo ./clean.sh 
-
+```
 
 ## How?
 
@@ -40,5 +38,5 @@ $sudo ./ruh.sh
 $sudo ./clean.sh
 ```
 
-Contact.
+##Contact.
 k1rh4.lee@gmail.com 
