@@ -12,14 +12,14 @@ SYSROOT =
 #######################################################
 
 PIC	= -c -fPIC 
-SHARED	= -shared #-m32
-DL	= -ldl 
-OPTION	=-Wimplicit-function-declaration
+SHARED	= -shared
+DL	= -ldl
+OPTION	= #-m32 
 
 FILE 	= hook
 
 default:
-	$(CC) $(SYSROOT) $(OPTION) $(PIC) $(FILE).c 
+	$(CC) $(SYSROOT) $(PIC) $(FILE).c 
 	$(CC) $(SYSROOT) $(OPTION) $(SHARED) $(FILE).o -o lib$(FILE).so $(DL)
 
 clean:

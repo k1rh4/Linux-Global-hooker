@@ -3,24 +3,22 @@
 #include<dlfcn.h>
 #include<stdlib.h>
 #include<string.h>
+#include<openssl/ssl.h> //Need to remove SSL_read function in ssl.h 
+
 extern char * __progname;
 static int (*hook_open)(const char *path , int flags, mode_t mode)= NULL;
 static int (*hook_open64)(const char *path , int flags, mode_t mode)= NULL;
 static FILE *(*hook_fopen)(const char *path, const char *mode) = NULL;
 static int (*hook_unlinkat)(int dirfd, const char *path, int flags) = NULL;
 static int (*hook_unlink)(const char *path) = NULL;
-static int (*hook_creat)(const char * pathname, mode_t mode) = NULL;
-static int (*hook_creat64)(const char * pathname, mode_t mode) = NULL;
-static int (*hook_openat)(int dirfd, const char * pathname, int flags, mode_t mode);
-static int (*hook_openat64)(int dirfd, const char * pathname, int flags, mode_t mode);
+static int (*hook_SSL_write)(SSL *ssl, const void *buf, int num) = NULL;
+static int (*hook_SSL_read) (SSL *ssl, const void *buf, int num) = NULL;
 
 
 #define MAX 0x100
-#define DEFAULT_FILTER 	"/tmp/"
-#define DEFAULT_CONFIG 	"/tmp/hook.ini"
-#define DEFAULT_LOG	"/tmp/file_log.txt"
+#define DEFAULT_FILTER "/tmp/"
 
-char FILTER[MAX] = DEFAULT_FILTER;
+char FILTER[MAX] ="/tmp/";
 FILE * cf_file = NULL;
 
 void getNamePID(int pid, char *pName)
@@ -32,32 +30,47 @@ void getNamePID(int pid, char *pName)
 	read(fp,(char *)pName,MAX);
 	close(fp);
 }
+
 void CheckConfig()
 {
 	if ( cf_file == NULL )
 	{
-		cf_file = hook_fopen(DEFAULT_CONFIG,"r");
+		cf_file = hook_fopen("/tmp/hook.ini","r");
 		if(cf_file) fscanf(cf_file,"%s",FILTER);
 		if(strlen(FILTER)<1) strncpy(FILTER,DEFAULT_FILTER,sizeof(FILTER));
 	}
+}
+
+void PrintStr(char * v1)
+{
+    char pName[MAX]={0,};
+    FILE * fp = NULL;
+    if( fp = hook_fopen("/tmp/file_log.txt", "a+") )
+    {
+        getNamePID(getppid(),pName);
+        fprintf(fp,"[M] Caller-> pName:[%s]:[%d],ppName:[%s]:[%d]->%s\n" \
+            ,__progname, getpid(),pName,getppid(), v1 );
+        fclose(fp);
+    }
 
 }
+
 void PrintLog(char * real_path)
 {
 	char pName[MAX] = {0,};
 	FILE *fp = NULL;
 	if( strstr(real_path,FILTER) > 0 )
 	{
-		if( fp = hook_fopen(DEFAULT_LOG, "a+") )
+		fp = hook_fopen("/tmp/file_log.txt", "a+");
+		if( fp )
 		{
 			getNamePID(getppid(),pName);
-			fprintf(fp,"[+] Caller->ppName:[%s]:[%d],pName:[%s]:[%d]->%s\n" \
-				,pName,getppid() ,__progname, getpid(),real_path );
+			fprintf(fp,"[-] Caller-> pName:[%s]:[%d],ppName:[%s]:[%d]->%s\n" \
+				,__progname, getpid(),pName,getppid(),real_path );
 			fclose(fp);
 		}
 		
 	}
-
 }
 int unlinkat(int dirfd, const char *path, int flags)
 {
@@ -83,64 +96,6 @@ int unlink(const char *path)
 	}
 	return hook_unlink(path);
 }
-
-int creat(const char * pathname, mode_t mode)
-{
-	if(hook_creat	==NULL) hook_creat = dlsym(RTLD_NEXT,"creat");
-	int hook_ret 		= hook_creat(pathname, mode);
-	char * real_path	= realpath(pathname,0);
-
-	if( real_path )
-	{
-		CheckConfig();
-		PrintLog( real_path );
-	}
-	return hook_ret;
-
-
-}
-int creat64(const char * pathname, mode_t mode)
-{
-	if(hook_creat64	==NULL) hook_creat64 = dlsym(RTLD_NEXT,"creat64");
-	int hook_ret 		= hook_creat64(pathname, mode);
-	char * real_path	= realpath(pathname,0);
-
-	if( real_path )
-	{
-		CheckConfig();
-		PrintLog( real_path );
-	}
-	return hook_ret;
-}
-int openat(int dirfd, const char * pathname, int flags, mode_t mode )
-{
-	if(hook_openat == NULL) hook_openat = dlsym(RTLD_NEXT, "openat");
-	int hook_ret 	 = hook_openat(dirfd, pathname, flags, mode );
-	char * real_path = realpath(pathname,0);
-	if( real_path )
-	{
-		CheckConfig();
-		PrintLog( real_path );
-
-	}
-	return hook_ret;
-
-}
-int openat64(int dirfd, const char * pathname, int flags, mode_t mode )
-{
-	if(hook_openat64 == NULL) hook_openat64 = dlsym(RTLD_NEXT, "openat64");
-	int hook_ret 	 = hook_openat64(dirfd, pathname, flags, mode );
-	char * real_path = realpath(pathname,0);
-	if( real_path )
-	{
-		CheckConfig();
-		PrintLog( real_path );
-
-	}
-	return hook_ret;
-
-}
-
 int open(const char * path, int flags, mode_t mode)
 {
 	if (hook_open 	== NULL) hook_open = dlsym(RTLD_NEXT, "open");
@@ -179,6 +134,24 @@ FILE * fopen(const char *path, const char *mode)
 	return hook_ret; 
 }
 
+int SSL_read(SSL *ssl, const void *buf, int num)
+{
+    int hook_ret = 0;
+    if (hook_SSL_read == NULL) hook_SSL_read = dlsym(RTLD_NEXT, "SSL_read");
+    hook_ret = hook_SSL_read(ssl , buf, num);
+    PrintStr( buf );
+    return hook_ret;
+}
+
+int SSL_write(SSL *ssl, const void *buf, int num)
+{
+    int hook_ret= 0;
+    if (hook_SSL_write == NULL) hook_SSL_write = dlsym(RTLD_NEXT, "SSL_write");
+    PrintStr( buf );
+    hook_ret = hook_SSL_write(ssl ,buf, num);
+    return hook_ret;
+}
+
 void __attribute__ ((constructor)) before_load(void)
 {
 	if (hook_open 	== NULL) hook_open 	= dlsym(RTLD_NEXT, "open");
@@ -186,6 +159,7 @@ void __attribute__ ((constructor)) before_load(void)
 	if (hook_fopen 	== NULL) hook_fopen 	= dlsym(RTLD_NEXT, "fopen");
 	if (hook_unlink	== NULL) hook_unlink 	= dlsym(RTLD_NEXT, "unlink");
 	if (hook_unlinkat == NULL)hook_unlinkat = dlsym(RTLD_NEXT, "unlinkat");
-
+	if (hook_SSL_write == NULL)hook_SSL_write = dlsym(RTLD_NEXT, "SSL_write");
+	if (hook_SSL_read == NULL)hook_SSL_read = dlsym(RTLD_NEXT, "SSL_read");
 }
 
