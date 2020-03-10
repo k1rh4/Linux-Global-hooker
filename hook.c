@@ -3,7 +3,7 @@
 #include<dlfcn.h>
 #include<stdlib.h>
 #include<string.h>
-#include<openssl/ssl.h> //Need to remove SSL_read function in ssl.h 
+//#include<openssl/ssl.h> //Need to remove SSL_read function in ssl.h 
 
 extern char * __progname;
 static int (*hook_open)(const char *path , int flags, mode_t mode)= NULL;
@@ -11,8 +11,8 @@ static int (*hook_open64)(const char *path , int flags, mode_t mode)= NULL;
 static FILE *(*hook_fopen)(const char *path, const char *mode) = NULL;
 static int (*hook_unlinkat)(int dirfd, const char *path, int flags) = NULL;
 static int (*hook_unlink)(const char *path) = NULL;
-static int (*hook_SSL_write)(SSL *ssl, const void *buf, int num) = NULL;
-static int (*hook_SSL_read) (SSL *ssl, const void *buf, int num) = NULL;
+//static int (*hook_SSL_write)(SSL *ssl, const void *buf, int num) = NULL;
+//static int (*hook_SSL_read) (SSL *ssl, const void *buf, int num) = NULL;
 
 
 #define MAX 0x100
@@ -133,7 +133,7 @@ FILE * fopen(const char *path, const char *mode)
 	}
 	return hook_ret; 
 }
-
+/*
 int SSL_read(SSL *ssl, const void *buf, int num)
 {
     int hook_ret = 0;
@@ -151,6 +151,7 @@ int SSL_write(SSL *ssl, const void *buf, int num)
     hook_ret = hook_SSL_write(ssl ,buf, num);
     return hook_ret;
 }
+*/
 
 void __attribute__ ((constructor)) before_load(void)
 {
@@ -159,7 +160,7 @@ void __attribute__ ((constructor)) before_load(void)
 	if (hook_fopen 	== NULL) hook_fopen 	= dlsym(RTLD_NEXT, "fopen");
 	if (hook_unlink	== NULL) hook_unlink 	= dlsym(RTLD_NEXT, "unlink");
 	if (hook_unlinkat == NULL)hook_unlinkat = dlsym(RTLD_NEXT, "unlinkat");
-	if (hook_SSL_write == NULL)hook_SSL_write = dlsym(RTLD_NEXT, "SSL_write");
-	if (hook_SSL_read == NULL)hook_SSL_read = dlsym(RTLD_NEXT, "SSL_read");
+//	if (hook_SSL_write == NULL)hook_SSL_write = dlsym(RTLD_NEXT, "SSL_write");
+//	if (hook_SSL_read == NULL)hook_SSL_read = dlsym(RTLD_NEXT, "SSL_read");
 }
 
