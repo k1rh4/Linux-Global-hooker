@@ -8,8 +8,6 @@ RM 	= rm
 ########################################################
 CC 	= gcc
 SYSROOT = 
-#CC      = $(TIZEN_CC)
-#SYSROOT = $(TIZEN_SYSROOT)
 #######################################################
 
 PIC	= -c -fPIC 
@@ -18,14 +16,17 @@ DL	= -ldl
 OPTION	= -Wl,--no-as-needed #-m32 
 
 FILE 	= hook
-
+FILE	= test
 default:
 	$(CC) $(SYSROOT) $(PIC) $(FILE).c 
 	$(CC) $(SYSROOT) $(OPTION) $(SHARED) $(FILE).o -o lib$(FILE).so $(DL)
 
-ARM:
+ARM_LIBRARY:
 	$(ARM_CC) $(SYS_ROOT) $(PIC) $(FILE).c 
 	$(ARM_CC) $(SYS_ROOT) $(OPTION) $(SHARED) $(FILE).o -o lib$(FILE).so $(DL)
+
+ARM_BINARY:
+	$(ARM_CC) $(SYS_ROOT) $(OPTION) $(FILE).c -o $(FILE).bin
 
 clean:
 	$(RM) lib$(FILE).so $(FILE).o
