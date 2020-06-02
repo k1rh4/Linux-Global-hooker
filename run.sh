@@ -9,6 +9,8 @@
 
 CHSMACK="/usr/bin/chsmack"
 SUDO="/usr/bin/sudo"
+CONF="/tmp/hook.ini"
+LOG_FILE="/tmp/file_log.txt"
 
 if ! [ $(id -u) = 0 ]
 then
@@ -17,29 +19,24 @@ then
 fi
 
 echo "[!] removing /tmp/file_log.txt."
-rm -rf /tmp/file_log.txt
+rm -rf $LOG_FILE
 
 echo "[!] Making /tmp/hook.ini"
-rm /tmp/hook.ini
-touch /tmp/hook.ini
-chmod 777 /tmp/hook.ini
+rm $CONF && touch $CONF && chmod 777 $CONF
 
 echo "[!] Saving argv1 into /tmp/hook.ini"
 if [ $1 ] 
-then echo "$1" > /tmp/hook.ini
+then echo "$1" > $CONF
 fi
 
 echo "[!] Creating /tmp/file_log.txt"
-touch /tmp/file_log.txt
-
-echo "[!] Set authrization to /tmp/file_log.txt"
-chmod 777 /tmp/file_log.txt
+touch $LOG_FILE && chmod 777 $LOG_FILE
 
 echo "[!] Inject libhook.so into /etc/ld.so.preload."
 echo "[!] Must be off KUEP so that remount,rw /"
 if test -e "$CHSMACK"
 then
-	chsmack -a "*" /tmp/file_log.txt
+	chsmack -a "*" $LOG_FILE
 	mount -o remount,rw /
 fi
 
@@ -59,6 +56,6 @@ then
 fi
 
 
-echo "[!] Monitoring /tmp/file_log.txt"
-tail -f /tmp/file_log.txt
+echo "[!] Monitoring $LOG_FILE"
+tail -f $LOG_FILE
 
