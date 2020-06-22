@@ -16,7 +16,7 @@ DL	= -ldl
 OPTION	= -Wl,--no-as-needed #-m32 
 
 FILE 	= hook
-FILE	= test
+#FILE	= test
 default:
 	$(CC) $(SYSROOT) $(PIC) $(FILE).c 
 	$(CC) $(SYSROOT) $(OPTION) $(SHARED) $(FILE).o -o lib$(FILE).so $(DL)
